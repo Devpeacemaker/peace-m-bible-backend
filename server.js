@@ -1,3 +1,4 @@
+require("dotenv").config();
 
 const express = require("express");
 const axios = require("axios");
@@ -9,8 +10,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const API_KEY =
-  "sk_ea6fa5e65d2dc2baf13d7bb6c013c3bac4fc02f9caff820579903cd19da07692";
+const API_KEY = process.env.API_KEY;
+const PORT = process.env.PORT || 3000;
 
 // ============================
 // CREATE ACCOUNT
@@ -76,7 +77,7 @@ app.post("/stkpush", async (req, res) => {
     res.json(response.data);
   } catch (e) {
     res.status(500).json({
-      error: e.response?.data ?? e.message,
+      error: e.response?.data || e.message,
     });
   }
 });
@@ -99,7 +100,7 @@ app.get("/status/:id", async (req, res) => {
     res.json(response.data);
   } catch (e) {
     res.status(500).json({
-      error: e.response?.data ?? e.message,
+      error: e.response?.data || e.message,
     });
   }
 });
@@ -149,6 +150,10 @@ app.get("/premium/:phone", (req, res) => {
   });
 });
 
-app.listen(3000, () => {
-  console.log("Peace M Bible backend running on port 3000");
+// ============================
+// SERVER
+// ============================
+
+app.listen(PORT, () => {
+  console.log(`Peace M Bible backend running on port ${PORT}`);
 });
