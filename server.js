@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
@@ -8,51 +10,52 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const API_KEY =
-  "sk_ea6fa5e65d2dc2baf13d7bb6c013c3bac4fc02f9caff820579903cd19da07692";
+const API_KEY = process.env.API_KEY;
 
-// ============================
-// CREATE ACCOUNT
-// ============================
+app.post("/register", async (req, res) => {
+  try {
+    const user = {
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      premium: false,
+      expiry: null,
+    };
 
-app.post("/register", (req, res) => {
-  const user = {
-    name: req.body.name,
-    email: req.body.email,
-    phone: req.body.phone,
-    premium: false,
-    expiry: null,
-  };
+    const savedUser = await db.addUser(user);
 
-  db.addUser(user);
-
-  res.json({
-    success: true,
-    message: "Account created successfully.",
-    user,
-  });
-});
-
-// ============================
-// GET USER
-// ============================
-
-app.get("/user/:phone", (req, res) => {
-  const user = db.getUser(req.params.phone);
-
-  if (!user) {
-    return res.status(404).json({
+    res.json({
+      success: true,
+      message: "Account created successfully.",
+      user: savedUser,
+    });
+  } catch (e) {
+    res.status(500).json({
       success: false,
-      message: "User not found.",
+      message: e.message,
     });
   }
-
-  res.json(user);
 });
 
-// ============================
-// STK PUSH
-// ============================
+app.get("/user/:phone", async (req, res) => {
+  try {
+    const user = await db.getUser(req.params.phone);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    res.json(user);
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      message: e.message,
+    });
+  }
+});
 
 app.post("/stkpush", async (req, res) => {
   try {
@@ -80,10 +83,6 @@ app.post("/stkpush", async (req, res) => {
   }
 });
 
-// ============================
-// PAYMENT STATUS
-// ============================
-
 app.get("/status/:id", async (req, res) => {
   try {
     const response = await axios.get(
@@ -103,51 +102,61 @@ app.get("/status/:id", async (req, res) => {
   }
 });
 
-// ============================
-// ACTIVATE PREMIUM
-// ============================
+app.post("/activate", async (req, res) => {
+  try {
+    const phone = req.body.phone;
+    const plan = req.body.plan;
 
-app.post("/activate", (req, res) => {
-  const phone = req.body.phone;
-  const plan = req.body.plan;
+    let months = 2;
 
-  let months = 2;
+    if (plan === "6 Months") months = 6;
+    if (plan === "1 Year") months = 12;
 
-  if (plan === "6 Months") {
-    months = 6;
-  }
+    const user = await db.activatePremium(
+      phone,
+      months,
+    );
 
-  if (plan === "1 Year") {
-    months = 12;
-  }
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
 
-  const user = db.activatePremium(phone, months);
-
-  if (!user) {
-    return res.status(404).json({
+    res.json({
+      success: true,
+      user,
+    });
+  } catch (e) {
+    res.status(500).json({
       success: false,
-      message: "User not found.",
+      message: e.message,
     });
   }
-
-  res.json({
-    success: true,
-    user,
-  });
 });
 
-// ============================
-// CHECK PREMIUM
-// ============================
+app.get("/premium/:phone", async (req, res) => {
+  try {
+    const premium = await db.premiumValid(
+      req.params.phone,
+    );
 
-app.get("/premium/:phone", (req, res) => {
-  const premium = db.premiumValid(req.params.phone);
-
-  res.json({
-    premium,
-  });
+    res.json({
+      premium,
+    });
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      message: e.message,
+    });
+  }
 });
 
-app.listen(3000, () => {
-  console.log("Peace M Bible backend running on port 3000");
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(
+    `Peace M Bible backend running on port ${PORT}`,
+  );
 });
