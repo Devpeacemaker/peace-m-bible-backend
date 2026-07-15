@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const { GoogleGenAI } = require("@google/genai");
 const db = require("./database");
 
 const app = express();
@@ -11,6 +12,10 @@ app.use(cors());
 app.use(express.json());
 
 const API_KEY = process.env.API_KEY;
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 app.post("/register", async (req, res) => {
   try {
@@ -82,7 +87,6 @@ app.post("/stkpush", async (req, res) => {
     });
   }
 });
-
 app.get("/status/:id", async (req, res) => {
   try {
     const response = await axios.get(
@@ -112,10 +116,7 @@ app.post("/activate", async (req, res) => {
     if (plan === "6 Months") months = 6;
     if (plan === "1 Year") months = 12;
 
-    const user = await db.activatePremium(
-      phone,
-      months,
-    );
+    const user = await db.activatePremium(phone, months);
 
     if (!user) {
       return res.status(404).json({
@@ -138,9 +139,7 @@ app.post("/activate", async (req, res) => {
 
 app.get("/premium/:phone", async (req, res) => {
   try {
-    const premium = await db.premiumValid(
-      req.params.phone,
-    );
+    const premium = await db.premiumValid(req.params.phone);
 
     res.json({
       premium,
@@ -153,10 +152,48 @@ app.get("/premium/:phone", async (req, res) => {
   }
 });
 
+app.post("/ai", async (req, res) => {
+  try {
+    const { question } = req.body;
+
+    if (!question) {
+      return res.status(400).json({
+        success: false,
+        message: "Question is required.",
+      });
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+You are PEACE M Bible AI.
+
+Answer ONLY Bible-related questions.
+Base every answer on Scripture.
+Quote Bible verses where appropriate.
+If asked about non-Bible topics, politely explain that you are a Bible assistant.
+
+Question:
+${question}
+      `,
+    });
+
+    res.json({
+      success: true,
+      answer: response.text,
+    });
+  } catch (e) {
+    console.error(e);
+
+    res.status(500).json({
+      success: false,
+      message: e.message,
+    });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(
-    `Peace M Bible backend running on port ${PORT}`,
-  );
+  console.log(`Peace M Bible backend running on port ${PORT}`);
 });
