@@ -3,7 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
-const { GoogleGenAI } = require("@google/genai");
 const db = require("./database");
 
 const app = express();
@@ -12,10 +11,6 @@ app.use(cors());
 app.use(express.json());
 
 const API_KEY = process.env.API_KEY;
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
 
 app.post("/register", async (req, res) => {
   try {
@@ -87,6 +82,7 @@ app.post("/stkpush", async (req, res) => {
     });
   }
 });
+
 app.get("/status/:id", async (req, res) => {
   try {
     const response = await axios.get(
@@ -163,31 +159,42 @@ app.post("/ai", async (req, res) => {
       });
     }
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `
-You are PEACE M Bible AI.
-
-Answer ONLY Bible-related questions.
-Base every answer on Scripture.
-Quote Bible verses where appropriate.
-If asked about non-Bible topics, politely explain that you are a Bible assistant.
-
-Question:
-${question}
-      `,
-    });
+    const response = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are PEACE M Bible AI. Answer ONLY Bible-related questions. Base every answer on Scripture. Quote Bible verses where appropriate. If asked about non-Bible topics, politely explain that you are a Bible assistant.",
+          },
+          {
+            role: "user",
+            content: question,
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://peace-m-bible-backend.onrender.com",
+          "X-Title": "Peace M Bible",
+        },
+      }
+    );
 
     res.json({
       success: true,
-      answer: response.text,
+      answer: response.data.choices[0].message.content,
     });
   } catch (e) {
-    console.error(e);
+    console.error(e.response?.data || e.message);
 
     res.status(500).json({
       success: false,
-      message: e.message,
+      message: e.response?.data || e.message,
     });
   }
 });
