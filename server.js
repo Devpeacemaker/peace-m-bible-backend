@@ -160,27 +160,27 @@ app.post("/ai", async (req, res) => {
     }
 
     const response = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: "google/gemini-2.5-flash",
+        model: "llama-3.3-70b-versatile",
         messages: [
           {
             role: "system",
             content:
-              "You are PEACE M Bible AI. Answer ONLY Bible-related questions. Base every answer on Scripture. Quote Bible verses where appropriate. If asked about non-Bible topics, politely explain that you are a Bible assistant.",
+              "You are PEACE M Bible AI. Answer ONLY Bible-related questions. Base your answers on Scripture. Quote Bible verses where appropriate. If asked non-Bible questions, politely explain that you only answer Bible-related questions.",
           },
           {
             role: "user",
             content: question,
           },
         ],
+        temperature: 0.4,
+        max_tokens: 1024,
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://peace-m-bible-backend.onrender.com",
-          "X-Title": "Peace M Bible",
         },
       }
     );
