@@ -206,9 +206,7 @@ app.post("/stkpush", async (req, res) => {
     );
 
 
-
-    const checkoutId =
-        response.data.checkoutRequestId;
+;
 
 
 
