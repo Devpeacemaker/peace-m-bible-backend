@@ -341,32 +341,31 @@ async function getRevenueSummary() {
     SELECT
 
       COUNT(*) FILTER (
-        WHERE status='completed'
+        WHERE LOWER(status)='completed'
       ) AS completed_payments,
 
       COALESCE(
         SUM(amount) FILTER (
-          WHERE status='completed'
+          WHERE LOWER(status)='completed'
         ),
         0
       ) AS total_revenue,
 
       COUNT(*) FILTER (
-        WHERE status='pending'
+        WHERE LOWER(status)='pending'
       ) AS pending_payments,
 
       COUNT(*) FILTER (
-        WHERE status='failed'
+        WHERE LOWER(status)='failed'
+           OR LOWER(status)='cancelled'
       ) AS failed_payments
 
     FROM payments
   `);
 
-
   return result.rows[0];
 
 }
-
 
 module.exports = {
   addUser,
