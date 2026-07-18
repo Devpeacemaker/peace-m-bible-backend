@@ -569,7 +569,30 @@ app.post("/admin/activate", adminAuth, async (req, res) => {
   }
 
 });
+app.get("/admin/revenue", adminAuth, async (req,res)=>{
 
+  try {
+
+    const summary =
+      await db.getRevenueSummary();
+
+
+    res.json({
+      success:true,
+      summary
+    });
+
+
+  } catch(e){
+
+    res.status(500).json({
+      success:false,
+      message:e.message
+    });
+
+  }
+
+});
 
 
 
