@@ -335,26 +335,46 @@ async function getPayment(id) {
 }
 
 
+async function getRevenueSummary() {
 
+  const result = await pool.query(`
+    SELECT
+
+      COUNT(*) FILTER (
+        WHERE status='completed'
+      ) AS completed_payments,
+
+      COALESCE(
+        SUM(amount) FILTER (
+          WHERE status='completed'
+        ),
+        0
+      ) AS total_revenue,
+
+      COUNT(*) FILTER (
+        WHERE status='pending'
+      ) AS pending_payments,
+
+      COUNT(*) FILTER (
+        WHERE status='failed'
+      ) AS failed_payments
+
+    FROM payments
+  `);
+
+
+  return result.rows[0];
+
+}
 
 
 module.exports = {
-
   addUser,
-
   getUser,
-
   activatePremium,
-
   premiumValid,
-
-
   addPayment,
-
   updatePaymentStatus,
-
   getPayments,
-
-  getPayment,
-
+  getRevenueSummary,
 };
