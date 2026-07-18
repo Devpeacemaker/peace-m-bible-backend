@@ -595,7 +595,23 @@ app.get("/admin/revenue", adminAuth, async (req,res)=>{
 });
 
 
+app.get("/admin/debug", adminAuth, async (req, res) => {
 
+  try {
+
+    const payments = await db.getPayments();
+
+    res.json(payments);
+
+  } catch (e) {
+
+    res.status(500).json({
+      message: e.message,
+    });
+
+  }
+
+});
 // ==========================
 // AI BIBLE ASSISTANT
 // ==========================
